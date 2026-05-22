@@ -72,7 +72,7 @@ export default function SessionPage({ params }: PageProps) {
         onStopDemo={sessionStatus === 'active' ? handleStopDemo : undefined}
       />
 
-      <div className="flex-1 grid grid-cols-[2fr_1.5fr_1.5fr] min-h-0">
+      <div className="flex-1 grid grid-cols-[2fr_1.5fr_1.5fr] grid-rows-1 min-h-0">
         <TranscriptPanel
           chunks={chunks}
           onStartDemo={handleStartDemo}

@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY environment variable is required")
+        logger.error("ANTHROPIC_API_KEY environment variable is not set")
 
     from app.services.session_store import SessionStore
 

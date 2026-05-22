@@ -116,10 +116,10 @@ async def analyze_transcript(session_id: str, transcript: str) -> AnalysisResult
             confusion_signals=[ConfusionSignal(**c) for c in payload.get("confusion_signals", [])],
         )
     except Exception as exc:
-        logger.exception(f"Analysis failed for session {session_id}: {exc}")
+        logger.error(f"Claude API call failed: {type(exc).__name__}: {exc}")
         return AnalysisResult(
             session_id=session_id,
-            summary="Analysis failed, please retry.",
+            summary=f"Analysis failed: {type(exc).__name__} — check Railway logs",
             action_items=[],
             questions=[],
             confusion_signals=[],

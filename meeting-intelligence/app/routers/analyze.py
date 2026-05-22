@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 from fastapi import APIRouter, HTTPException, Request
 
@@ -29,7 +30,11 @@ async def run_analysis(session_id: str, request: Request):
         raise HTTPException(status_code=400, detail="Transcript is empty")
 
     logger.info(f"Starting Claude analysis for session {session_id}")
-    result = await analyze_transcript(session_id, transcript)
+    try:
+        result = await analyze_transcript(session_id, transcript)
+    except Exception as exc:
+        logger.error(f"analyze_transcript raised: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(exc))
 
     store.mark_analyzed(session_id)
 
