@@ -84,7 +84,7 @@ async def _call_claude(transcript: str) -> str:
                 "content-type": "application/json",
             },
             json={
-                "model": "claude-sonnet-4-20250514",
+                "model": "claude-haiku-4-5",
                 "max_tokens": 2000,
                 "system": "You are an AI meeting intelligence system. Return only valid JSON, no markdown, no explanation.",
                 "messages": [
