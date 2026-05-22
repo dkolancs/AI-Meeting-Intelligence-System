@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Allow this serverless function up to 60 seconds on Vercel
+export const maxDuration = 60;
+
 const TRANSCRIPT: [string, number, string][] = [
   ['Prof. Martinez', 0,  'Alright everyone, let\'s get started. Today we\'re covering transformer attention mechanisms and how they relate to the project.'],
   ['Prof. Martinez', 3,  'The key insight is that attention lets the model weigh the importance of different input tokens when producing each output token.'],
@@ -21,7 +24,7 @@ const TRANSCRIPT: [string, number, string][] = [
   ['Prof. Martinez', 41, 'Use sinusoidal for now — we can experiment with learned embeddings later if time allows.'],
   ['Alex',           44, "What about the feed-forward layers? Who's handling those?"],
   ['Prof. Martinez', 46, "Good catch Alex. Can you take the feed-forward sublayer? It's two linear transformations with a ReLU in between."],
-  ['Alex',           48, 'Yeah I can do that. What\'s the target hidden dimension — 512 or 2048?'],
+  ['Alex',           48, "Yeah I can do that. What's the target hidden dimension — 512 or 2048?"],
   ['Prof. Martinez', 50, 'Use 2048 for the inner layer, 512 for the output. Standard base transformer config.'],
   ['Sam',            53, 'Quick question — do we need layer normalization before or after the sublayers?'],
   ['Prof. Martinez', 55, "Post-norm is the original paper but pre-norm is more stable in practice. Let's go with pre-norm."],
@@ -43,41 +46,39 @@ const TRANSCRIPT: [string, number, string][] = [
 
 const SPEED = 3.0;
 
+function sleep(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
 export async function POST(req: NextRequest) {
   const { sessionId } = (await req.json()) as { sessionId: string };
   const backendUrl = process.env.BACKEND_URL ?? 'http://localhost:8000';
 
-  // Fire-and-forget the replay sequence
-  void (async () => {
-    try {
-      let prevOffset = 0;
-      for (const [speaker, offset, text] of TRANSCRIPT) {
-        const delay = ((offset - prevOffset) / SPEED) * 1000;
-        if (delay > 0) await new Promise((r) => setTimeout(r, delay));
-        prevOffset = offset;
+  let prevOffset = 0;
+  for (const [speaker, offset, text] of TRANSCRIPT) {
+    const delay = ((offset - prevOffset) / SPEED) * 1000;
+    if (delay > 0) await sleep(delay);
+    prevOffset = offset;
 
-        await fetch(`${backendUrl}/ingest/chunk`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            session_id: sessionId,
-            speaker,
-            text,
-            timestamp: Date.now() / 1000,
-            is_final: true,
-          }),
-        });
-      }
+    await fetch(`${backendUrl}/ingest/chunk`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: sessionId,
+        speaker,
+        text,
+        timestamp: Date.now() / 1000,
+        is_final: true,
+      }),
+    });
+  }
 
-      await fetch(`${backendUrl}/ingest/end/${sessionId}`, { method: 'POST' });
-      await fetch(`${backendUrl}/analyze/${sessionId}`, {
-        method: 'POST',
-        signal: AbortSignal.timeout(90_000),
-      });
-    } catch (err) {
-      console.error('[simulate] Error during replay:', err);
-    }
-  })();
+  await fetch(`${backendUrl}/ingest/end/${sessionId}`, { method: 'POST' });
 
-  return NextResponse.json({ status: 'started', sessionId });
+  await fetch(`${backendUrl}/analyze/${sessionId}`, {
+    method: 'POST',
+    signal: AbortSignal.timeout(55_000),
+  });
+
+  return NextResponse.json({ status: 'done', sessionId });
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AnalysisPanel } from '@/components/AnalysisPanel';
 import { LiveSignalsPanel } from '@/components/LiveSignalsPanel';
 import { StatusBar } from '@/components/StatusBar';
@@ -13,6 +14,7 @@ interface PageProps {
 
 export default function SessionPage({ params }: PageProps) {
   const sessionId = params.id;
+  const router = useRouter();
   const [isRunning, setIsRunning] = useState(false);
   const startedAtRef = useRef(Date.now() / 1000);
 
@@ -39,11 +41,25 @@ export default function SessionPage({ params }: PageProps) {
       console.error(err);
       setIsRunning(false);
     }
-    // Keep isRunning=true until analyzed status arrives
+    setIsRunning(false);
   }, [sessionId]);
 
-  // Stop the "running" spinner once analysis completes
-  const effectiveRunning = isRunning && sessionStatus !== 'analyzed';
+  const handleStopDemo = useCallback(async () => {
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:8000';
+      await fetch(`${backendUrl}/ingest/end/${sessionId}`, { method: 'POST' });
+    } catch (err) {
+      console.error(err);
+    }
+    router.push('/');
+  }, [sessionId, router]);
+
+  const handleNewSession = useCallback(() => {
+    router.push('/');
+  }, [router]);
+
+  // Stop the "running" spinner once analysis completes or session ends
+  const effectiveRunning = isRunning && sessionStatus !== 'analyzed' && sessionStatus !== 'ended';
 
   return (
     <div className="h-screen flex flex-col bg-bg-base overflow-hidden">
@@ -52,6 +68,8 @@ export default function SessionPage({ params }: PageProps) {
         sessionStatus={sessionStatus}
         connectionStatus={connectionStatus}
         startedAt={startedAtRef.current}
+        onNewSession={handleNewSession}
+        onStopDemo={sessionStatus === 'active' ? handleStopDemo : undefined}
       />
 
       <div className="flex-1 grid grid-cols-[2fr_1.5fr_1.5fr] min-h-0">

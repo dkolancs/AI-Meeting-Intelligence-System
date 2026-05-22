@@ -8,6 +8,8 @@ interface StatusBarProps {
   sessionStatus: SessionStatus;
   connectionStatus: ConnectionStatus;
   startedAt: number;
+  onNewSession: () => void;
+  onStopDemo?: () => void;
 }
 
 function formatElapsed(seconds: number): string {
@@ -35,6 +37,8 @@ export function StatusBar({
   sessionStatus,
   connectionStatus,
   startedAt,
+  onNewSession,
+  onStopDemo,
 }: StatusBarProps) {
   const [elapsed, setElapsed] = useState(0);
 
@@ -66,11 +70,25 @@ export function StatusBar({
         )}
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 text-xs text-text-secondary mr-2">
           <span className={`w-2 h-2 rounded-full ${CONN_DOT[connectionStatus]}`} />
           {connectionStatus}
         </div>
+        {onStopDemo && (
+          <button
+            onClick={onStopDemo}
+            className="px-3 py-1 text-xs rounded border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors"
+          >
+            Stop Demo
+          </button>
+        )}
+        <button
+          onClick={onNewSession}
+          className="px-3 py-1 text-xs rounded border border-border-bright text-text-secondary hover:text-text-primary hover:border-border-bright/80 transition-colors"
+        >
+          New Session
+        </button>
         <button
           onClick={() => window.print()}
           className="px-3 py-1 text-xs rounded border border-border-bright text-text-secondary hover:text-text-primary hover:border-border-bright/80 transition-colors"
