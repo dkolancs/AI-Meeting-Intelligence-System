@@ -37,7 +37,6 @@ export type WSEventType = 'chunk' | 'question' | 'confusion' | 'analysis' | 'sta
 
 export interface WSEvent {
   event: WSEventType;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
 }
 
